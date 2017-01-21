@@ -45,7 +45,6 @@ class PupilsDetector:
 
     def __init__(self, eyes):
         self.eyes = eyes
-        self.detect()
 
     def detect(self, image):
         for (x, y, w, h) in self.eyes:
@@ -96,8 +95,9 @@ class Main:
 
     def calibration(self):
         eyes = []
+        ret, frame = self.video_capture.read()
 
-        while eyes_validator(eyes):
+        while not eyes_validator(eyes, frame):
             ret, frame = self.video_capture.read()
 
             if ret == 1:
@@ -113,6 +113,7 @@ class Main:
                 break
 
         self.tracker = PupilsDetector(eyes)
+        self.tracker.detect(frame)
         self.paintpupils(self.tracker.pupils_location(), frame)
 
     def run(self):
@@ -133,3 +134,5 @@ class Main:
 
 
 
+go = Main()
+go.run()
