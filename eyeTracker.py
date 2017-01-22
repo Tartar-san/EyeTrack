@@ -62,6 +62,31 @@ def eyes_validator(eyes):
     return True
 
 
+def blob_params():
+    params = cv2.SimpleBlobDetector_Params()
+
+    # Change thresholds
+    params.minThreshold = 10;
+    params.maxThreshold = 200;
+
+    # Filter by Area.
+    params.filterByArea = True
+    params.minArea = 1500
+
+    # Filter by Circularity
+    params.filterByCircularity = True
+    params.minCircularity = 0.1
+
+    # Filter by Convexity
+    params.filterByConvexity = True
+    params.minConvexity = 0.87
+
+    # Filter by Inertia
+    params.filterByInertia = True
+    params.minInertiaRatio = 0.01
+    return params
+
+
 class PupilsDetector:
 
     def __init__(self):
@@ -103,7 +128,7 @@ class PupilsDetector:
 
         return eyes_validator(self.eyes)
 
-    def detect(self, eye):
+    def detect(self, eye, prev):
         gauss = cv2.GaussianBlur(eye, (5, 5), 0)
         minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(gauss)
         thresh = cv2.threshold(gauss, minVal * 1.2, 255, cv2.THRESH_BINARY_INV)[1]
@@ -112,17 +137,21 @@ class PupilsDetector:
         contourIm = np.zeros(thresh.shape, dtype="uint8");
         cv2.drawContours(contourIm, contours, -1, 255, 1)
         contour = None
+        closest = None
         for c in contours:
+            M = cv2.moments(c)
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
             if cv2.pointPolygonTest(c, minLoc, False) >= 0:
                 contour = c
                 break
 
+        cv2.circle(gauss, (minLoc[0], minLoc[1]), 2, (0, 0, 255), 3)
+        cv2.imshow("gauss", gauss)
+        cv2.imshow("eye", thresh)
+        cv2.imshow("thresh", contourIm)
         if contour is None:
             #self.pupils = (minLoc[0], minLoc[1], 1, 1)
-            cv2.circle(gauss, (minLoc[0], minLoc[1]), 2, (0, 0, 255), 3)
-            cv2.imshow("gauss", gauss)
-            cv2.imshow("eye", thresh)
-            cv2.imshow("thresh", contourIm)
             return {'x': minLoc[0], 'y': minLoc[1], 'r': 0}
 
         M = cv2.moments(contour)
