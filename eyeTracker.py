@@ -86,11 +86,11 @@ class PupilsDetector:
             y1 = max(0, eye['y']-max(3*eye['r'], 6))
             y2 =  min(eye['y']+max(3*eye['r'], 6), image.shape[0]-1)
             eye = image[y1:y2, x1:x2]
-            prev = np.copy(previous[y1:y2, x1:x2])
+            #prev = np.copy(previous[y1:y2, x1:x2])
 
-            frameDelta = cv2.absdiff(prev, eye)
-            thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
-            cv2.imshow("diff", thresh)
+            #frameDelta = cv2.absdiff(prev, eye)
+            #thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
+            #cv2.imshow("diff", thresh)
 
             if frame is not None:
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
