@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import math
+from pymouse import PyMouse
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_alt.xml')
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
@@ -245,15 +246,16 @@ class Main:
 
 class Cursor:
 
-    def __init__(self, w=500, h=500):
+    def __init__(self, w=1324, h=600):
         self.w = w
         self.h = h
         self.etalon_area = np.zeros(shape=(w,h,3))
         self.area = np.zeros(shape=(w,h,3))
         self.x = w / 2
         self.y = h / 2
-        self.xCoeficient = 2.5
-        self.yCoeficient = 3
+        self.xCoeficient = 5
+        self.yCoeficient = 5
+        self.m = PyMouse()
 
     def move_cursor(self, lst):
         xMovement = lst[0]
@@ -270,8 +272,10 @@ class Cursor:
 
     def draw_cursor(self, frame):
         self.area = np.add(self.etalon_area, self.area/1.2)
-        cv2.circle(self.area,(self.x, self.y), 3, (255, 0, 0), 3)
-        cv2.imshow("Cursos", self.area)
+        #cv2.circle(self.area,(self.x, self.y), 7, (0, 255, 0), 7)
+        #cv2.imshow("Cursor", self.area)
+        self.m.move(self.x, self.y)
+
 
 
     def refresh(self):
