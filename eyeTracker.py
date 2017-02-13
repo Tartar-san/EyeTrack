@@ -6,6 +6,22 @@ from pymouse import PyMouse
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_alt.xml')
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 
+def the_same(alist, blist):
+    if alist is None:
+        return False
+    if blist is None:
+        return False
+    if len(alist) == 0:
+        return False
+    if len(blist) == 0:
+        return False
+    if len(alist) != len(blist):
+        return False
+    for i in range(len(alist)):
+        if (np.array_equal(alist[i], blist[i])):
+            return False
+    return True
+
 def transformCoordinates(original, relative):
     """
     All locations in format (x, y, w, h)
@@ -18,7 +34,7 @@ def detect_eyes(face, gray):
     face_gray = gray[y:y+h//2, x:x+w]
     eyes = eye_cascade.detectMultiScale(
         face_gray,
-        minNeighbors = 20,
+        minNeighbors = 5,
         flags = cv2.CASCADE_SCALE_IMAGE
         # cv2.cv.CV_HAAR_SCALE_IMAGE
     )
@@ -85,8 +101,8 @@ class PupilsDetector:
     def track(self, image, previous, frame = None):
         self.previous_eyes = [i for  i in self.eyes]
         for i, (eye, prev_eye) in enumerate(zip(self.eyes, self.previous_eyes)):
-            x1 = max(0, eye['x']-max(5*eye['r'], 10))
-            x2 = min(eye['x']+max(5*eye['r'], 10), image.shape[1]-1)
+            x1 = max(0, eye['x']-max(4*eye['r'], 10))
+            x2 = min(eye['x']+max(4*eye['r'], 10), image.shape[1]-1)
             y1 = max(0, eye['y']-max(3*eye['r'], 6))
             y2 =  min(eye['y']+max(3*eye['r'], 6), image.shape[0]-1)
             eye = image[y1:y2, x1:x2]
@@ -102,11 +118,11 @@ class PupilsDetector:
         gauss = cv2.GaussianBlur(eye, (5, 5), 0)
         minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(gauss)
         thresh = cv2.threshold(gauss, minVal * 1.2, 255, cv2.THRESH_BINARY_INV)[1]
+        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         #im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         contourIm = np.zeros(thresh.shape, dtype="uint8");
-        cv2.drawContours(contourIm, contours, -1, 255, 1)
+        #cv2.drawContours(contourIm, contours, -1, 255, 1)
         contour = None
         closest = None
         clos_dist = None
@@ -138,10 +154,10 @@ class PupilsDetector:
         radius /= len(contour[0])
         radius = int(radius)
 
-        if prev_eye is not None and closest != contour and closest is not None:
+        if prev_eye is not None and not the_same(closest, contour) and closest is not None:
             if contour[1][0] - radius > -2 or contour[1][0] + radius < eye.shape[1] + 3 \
                     or contour[1][1] - radius > -2  or contour[1][1] + radius < eye.shape[0] + 3:
-                cv2.imshow('contour', contourIm)
+                #cv2.imshow('contour', contourIm)
                 print 'closest'
                 contour = closest
                 radius = 0
@@ -173,8 +189,8 @@ class PupilsDetector:
     def paintpupils(self, frame):
         if self.eyes is not None:
             for eye in self.eyes:
-                cv2.circle(frame, (eye['x'], eye['y']), 1, (0, 0, 255), 1)
-                cv2.circle(frame, (eye['x'], eye['y']), eye['r'], (0, 0, 255), 1)
+                cv2.circle(frame, (eye['x'], eye['y']), 2, (0, 0, 255), 2)
+                #cv2.circle(frame, (eye['x'], eye['y']), eye['r'], (0, 0, 255), 1)
 
 class Main:
 
@@ -241,7 +257,7 @@ class Main:
             self.previousFrame = gray
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+                breakq
 
 
 class Cursor:
@@ -253,7 +269,7 @@ class Cursor:
         self.area = np.zeros(shape=(w,h,3))
         self.x = w / 2
         self.y = h / 2
-        self.xCoeficient = 5
+        self.xCoeficient = 15
         self.yCoeficient = 5
         self.m = PyMouse()
 
